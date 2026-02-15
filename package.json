@@ -4,4 +4,5 @@
   "main": "index.js",
   "scripts": {"start": "node index.js"},
   "dependecies": {"express": "^4.18.2"}
+  "engines": {"node": "18.x"}
 }
