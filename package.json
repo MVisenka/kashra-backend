@@ -1,5 +1,6 @@
-{"name}: "kashra-backend",
+{
+  "name}: "kashra-backend",
   "version": "1.0.0",
-  "name": "index.js",
-  "scripts": {"start": "node index.js"},
+  "main": "index.js",
+  "scripts": {"start": "index.js"},
   "dependecies": {"express": "^4.12.2"}}
