@@ -1,48 +1,18 @@
-// generateReport.js
-const fetch = require('node-fetch'); // ak Node <18
-const PDF_ENDPOINT = "https://kashra-backend-production-abfb.up.railway.app/generate-pdf"; // tvoj server endpoint
-const TEMPLATE_URL = "https://raw.githubusercontent.com/MVisenka/kashra-backend/refs/heads/main/template.html"; // raw URL template.html
+import chromium from "chrome-aws-lambda";
+import puppeteer from "puppeteer-core";
 
-/**
- * generatePdf - stiahne šablónu, vloží obsah a pošle na server
- * @param {string} reportId - unikátny ID reportu
- * @param {string} reportContent - obsah CFO reportu
- * @param {object} tier - info o tier-e (napr. FREE)
- */
-async function generatePdf(reportId, reportContent, tier) {
-  try {
-    // 1️⃣ stiahni šablónu HTML z GitHubu
-    const templateHtml = await fetch(TEMPLATE_URL).then(res => res.text());
+export async function generatePdf(html) {
+  const browser = await puppeteer.launch({
+    args: chromium.args,
+    defaultViewport: chromium.defaultViewport,
+    executablePath: await chromium.executablePath,
+    headless: true,
+  });
 
-    // 2️⃣ nahraď placeholder obsahom reportu
-    const fullHtmlString = templateHtml.replace("{{REPORT_CONTENT}}", reportContent);
+  const page = await browser.newPage();
+  await page.setContent(html, { waitUntil: "networkidle0" });
 
-    // 3️⃣ priprav payload pre server
-    const payload = {
-      reportId,
-      tier: JSON.stringify(tier),
-      html: fullHtmlString
-    };
-
-    // 4️⃣ pošli request na server
-    const response = await fetch(PDF_ENDPOINT, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      console.error("❌ PDF generation failed:", error);
-      throw new Error("PDF generation failed");
-    }
-
-    return await response.buffer(); // vráti PDF buffer
-
-  } catch (err) {
-    console.error("Error in generatePdf:", err);
-    throw err;
-  }
+  const pdf = await page.pdf({ format: "A4", printBackground: true });
+  await browser.close();
+  return pdf;
 }
-
-module.exports = { generatePdf };
