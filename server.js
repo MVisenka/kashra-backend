@@ -11,7 +11,7 @@ app.get("/health", (req, res) => {
   res.json({ status: "ok", service: "PDF service" });
 });
 
-// PDF generator
+// PDF generator endpoint
 app.post("/generate-pdf", async (req, res) => {
   let browser;
 
@@ -55,15 +55,10 @@ app.post("/generate-pdf", async (req, res) => {
     });
 
     res.send(pdfBuffer);
+
   } catch (err) {
     console.error("PDF error:", err);
-
-    if (browser) {
-      try {
-        await browser.close();
-      } catch {}
-    }
-
+    if (browser) await browser.close();
     res.status(500).json({ error: "PDF generation failed" });
   }
 });
