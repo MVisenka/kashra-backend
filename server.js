@@ -1,69 +1,46 @@
 import express from "express";
-import puppeteer from "puppeteer";
+import cors from "cors";
+import { generatePdf } from "./generateReport.js";
+import { createClient } from "@supabase/supabase-js";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Supabase client
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+
+app.use(cors());
 app.use(express.json({ limit: "10mb" }));
 
-// Health check
-app.get("/health", (req, res) => {
-  res.json({ status: "ok", service: "PDF service" });
-});
-
-// PDF generator endpoint
 app.post("/generate-pdf", async (req, res) => {
-  let browser;
-
   try {
-    const { html } = req.body;
+    const { html, filename } = req.body;
+    if (!html) return res.status(400).json({ error: "No HTML provided" });
 
-    if (!html) {
-      return res.status(400).json({ error: "Missing html" });
-    }
+    // Generate PDF buffer
+    const pdfBuffer = await generatePdf(html);
 
-    browser = await puppeteer.launch({
-      headless: "new",
-      args: [
-        "--no-sandbox",
-        "--disable-setuid-sandbox",
-        "--disable-dev-shm-usage",
-        "--disable-gpu",
-        "--no-first-run",
-        "--no-zygote",
-        "--single-process"
-      ]
-    });
+    // Upload to Supabase storage
+    const { error: storageError } = await supabase.storage
+      .from("reports")
+      .upload(filename, pdfBuffer, {
+        contentType: "application/pdf",
+        upsert: true,
+      });
 
-    const page = await browser.newPage();
+    if (storageError) throw storageError;
 
-    await page.setContent(html, {
-      waitUntil: "networkidle0",
-      timeout: 30000
-    });
+    // Get public URL
+    const url = supabase.storage.from("reports").getPublicUrl(filename).publicUrl;
 
-    const pdfBuffer = await page.pdf({
-      format: "A4",
-      printBackground: true
-    });
-
-    await browser.close();
-
-    res.set({
-      "Content-Type": "application/pdf",
-      "Content-Disposition": "inline; filename=report.pdf"
-    });
-
-    res.send(pdfBuffer);
-
+    res.json({ url });
   } catch (err) {
-    console.error("PDF error:", err);
-    if (browser) await browser.close();
-    res.status(500).json({ error: "PDF generation failed" });
+    console.error(err);
+    res.status(500).json({ error: "Failed to generate PDF" });
   }
 });
 
-// Start server
-app.listen(PORT, "0.0.0.0", () => {
-  console.log("Server running on port", PORT);
-});
+app.listen(PORT, () => console.log(`PDF service running on port ${PORT}`));
