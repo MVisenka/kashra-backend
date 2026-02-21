@@ -1,7 +1,7 @@
 // generateReport.js
 const fetch = require('node-fetch'); // ak Node <18
-const PDF_ENDPOINT = "https://your-railway-app.up.railway.app/generate-pdf"; // tvoj server endpoint
-const TEMPLATE_URL = "https://raw.githubusercontent.com/USERNAME/REPO/main/template.html"; // raw URL template.html
+const PDF_ENDPOINT = "https://kashra-backend-production-abfb.up.railway.app/generate-pdf"; // tvoj server endpoint
+const TEMPLATE_URL = "https://raw.githubusercontent.com/MVisenka/kashra-backend/refs/heads/main/template.html"; // raw URL template.html
 
 /**
  * generatePdf - stiahne šablónu, vloží obsah a pošle na server
