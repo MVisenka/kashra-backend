@@ -1,7 +1,7 @@
 // generateReport.js
 const fetch = require('node-fetch'); // ak Node <18, inak stačí global fetch
 
-const PDF_ENDPOINT = "https://PDF_GENERATOR_ENDPOINT"; // sem vlož URL tvojho PDF generátora
+const PDF_ENDPOINT = "https://kashra-backend-production-abfb.up.railway.app/generate-pdf"; // sem vlož URL tvojho PDF generátora
 const TEMPLATE_URL = "https://raw.githubusercontent.com/USERNAME/REPO/main/template.html"; // sem vlož raw URL tvojej šablóny
 
 /**
