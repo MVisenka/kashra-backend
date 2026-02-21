@@ -1,31 +1,30 @@
 // generateReport.js
-const fetch = require('node-fetch'); // ak Node <18, inak stačí global fetch
-
-const PDF_ENDPOINT = "https://kashra-backend-production-abfb.up.railway.app/generate-pdf"; // sem vlož URL tvojho PDF generátora
-const TEMPLATE_URL = "https://raw.githubusercontent.com/USERNAME/REPO/main/template.html"; // sem vlož raw URL tvojej šablóny
+const fetch = require('node-fetch'); // ak Node <18
+const PDF_ENDPOINT = "https://your-railway-app.up.railway.app/generate-pdf"; // tvoj server endpoint
+const TEMPLATE_URL = "https://raw.githubusercontent.com/USERNAME/REPO/main/template.html"; // raw URL template.html
 
 /**
- * Funkcia na generovanie PDF
+ * generatePdf - stiahne šablónu, vloží obsah a pošle na server
  * @param {string} reportId - unikátny ID reportu
- * @param {string} reportContent - celý obsah CFO reportu
- * @param {object} tier - informácie o type reportu
+ * @param {string} reportContent - obsah CFO reportu
+ * @param {object} tier - info o tier-e (napr. FREE)
  */
 async function generatePdf(reportId, reportContent, tier) {
   try {
-    // 1️⃣ Stiahni HTML šablónu z GitHubu
+    // 1️⃣ stiahni šablónu HTML z GitHubu
     const templateHtml = await fetch(TEMPLATE_URL).then(res => res.text());
 
-    // 2️⃣ Nahraď placeholder obsahom reportu
+    // 2️⃣ nahraď placeholder obsahom reportu
     const fullHtmlString = templateHtml.replace("{{REPORT_CONTENT}}", reportContent);
 
-    // 3️⃣ Priprav payload pre PDF generátor
+    // 3️⃣ priprav payload pre server
     const payload = {
-      reportId: reportId,
+      reportId,
       tier: JSON.stringify(tier),
       html: fullHtmlString
     };
 
-    // 4️⃣ Pošli request na PDF generátor
+    // 4️⃣ pošli request na server
     const response = await fetch(PDF_ENDPOINT, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -38,14 +37,12 @@ async function generatePdf(reportId, reportContent, tier) {
       throw new Error("PDF generation failed");
     }
 
-    // 5️⃣ Vráť úspešnú odpoveď
-    return await response.json();
+    return await response.buffer(); // vráti PDF buffer
 
   } catch (err) {
-    console.error("Error generating PDF:", err);
+    console.error("Error in generatePdf:", err);
     throw err;
   }
 }
 
-// Export funkcie
 module.exports = { generatePdf };
